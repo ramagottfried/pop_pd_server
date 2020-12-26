@@ -1,12 +1,15 @@
 <html>
 <head>
-<!--    <script src="./node_modules/socket.io/dist/client.js"></script> -->
     <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="stylie.css">
+
 </head>
 <body>
     <div>hello world!</div>
-    <button id="play_btn">play</button>
+    <button id="pd_play">pd_play</button>
 
+    <button id="play">play</button>
+    <button id="stop">stop</button>
 
     <select name="song" id="song-select">
         <option value="">--select track--</option>
@@ -17,43 +20,12 @@
     </select>
     
     <div>
-        <input type="range" id="volume" name="volume"
+        <input type="range" class="vranger" id="volume" name="volume"
                min="0" max="100">
-        <label for="volume">Volume</label>
-      </div>
+        <label for="volume" class="vranger">Volume</label>
+    </div>
 
-    <script>
-        var socket = io();   
-        
-        // receiving messages
-        socket.on('msg', (buf) => {
-            console.log(buf);
-        })
-
-        // send messages on events
-        let btn = document.getElementById('play_btn');
-        btn.addEventListener('click', () => {
-            socket.emit('msg', {
-                play: 'bang'
-            })
-        })
-
-        let volume = document.getElementById('volume');
-        volume.addEventListener('input', () => {
-//            console.log('volume', volume.value)
-            socket.emit('msg', {
-                vol: parseFloat(volume.value) / 100.
-            })
-        })
-
-        let selector = document.getElementById('song-select');
-        selector.addEventListener('change', () => {
-            console.log('selector', selector.value)
-            socket.emit('msg', {
-                select: selector.value
-            })
-        })
-
-    </script>
+    <script src="script.js"></script>
+    
 </body>
 </html>

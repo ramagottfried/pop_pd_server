@@ -2,6 +2,10 @@
 'use strict';
 
 const http_port = 5001;
+const udp_input_port = 8888;
+
+const pd_port = 7777;
+const reaper_port = 8000;
 
 const http  = require('http');
 const express = require('express');
@@ -38,10 +42,14 @@ function initSocket(socket)
         console.log(`ciao! ${socket}`);
     });
 
-    socket.on('msg', msg => {
-//        console.log(msg);
-        udpSend(msg);
+    socket.on('pd', msg => {
+        udpSend(msg, pd_port);
     })
+
+    socket.on('reaper', msg => {
+        udpSend(msg, reaper_port);
+    })
+
 }
 
 
@@ -67,8 +75,7 @@ let getIPAddresses = function () {
 
 
 let udp_server;
-let sendToIP = '127.0.0.1';
-let sendPort = 7777;
+//let sendToIP = '127.0.0.1';
 
 udp_server = dgram.createSocket('udp4');;
 
@@ -92,10 +99,10 @@ udp_server.on('message', (msg, rinfo) => {
     io.emit("msg", obj);
 });
 
-udp_server.bind(8888);
+udp_server.bind(udp_input_port);
 
 
-function udpSend(msg)
+function udpSend(msg, port)
 {
     const bndl = obj2osc(msg);
     if( bndl.length > 65507 ){
@@ -106,7 +113,7 @@ function udpSend(msg)
     }
     else
     {
-        udp_server.send( bndl, sendPort, (err) => {
+        udp_server.send( bndl, port, (err) => {
             if( err ) console.error(`udp_server ${err} (size ${bndl.length})`);
           });
     }
