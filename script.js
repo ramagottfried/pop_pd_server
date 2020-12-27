@@ -30,14 +30,16 @@ selector.addEventListener('change', () => {
 })
 
 
-document.getElementById('play').addEventListener('click', () => {
+document.getElementById('play').addEventListener('touchstart', () => {
     socket.emit('reaper', {
         play: 'bang'
     })
+    log.innerHTML = "play"
 })
 
-document.getElementById('stop').addEventListener('click', () => {
+document.getElementById('stop').addEventListener('touchstart', () => {
     socket.emit('reaper', {
         stop: 'bang'
     })
+    log.innerHTML = "stop"
 })

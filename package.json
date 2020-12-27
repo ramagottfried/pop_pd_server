@@ -2,7 +2,7 @@
   "name": "for_pop",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "index-ws.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
