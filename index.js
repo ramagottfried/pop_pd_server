@@ -9,21 +9,101 @@ const reaper_port = 8000;
 
 const http  = require('http');
 const express = require('express');
-const socketio = require('socket.io');
+//const socketio = require('socket.io');
+
+const WebSocket = require('ws');
+
 const dgram = require('dgram');
+const { obj2osc, osc2obj } = require('./o');
+
 
 const app = express();
 app.use(express.static(__dirname));
 
 const server = http.createServer(app);
-const io = socketio(server);
 
-const { obj2osc, osc2obj } = require('./o');
-
-io.on('connect', (socket) => {
-    console.log("connected to namespace-> ", socket.nsp.name);
-    initSocket(socket);
+// setup sockets
+const wss = new WebSocket.Server({
+    server: server
 });
+
+wss.setMaxListeners(200);
+
+// pretty sure this is never called
+wss.on("close", function (socket, req) {
+    const uniqueid = req.headers['sec-websocket-key'];
+    const _url = req.url;
+
+    console.log('received wss socket close', _url, uniqueid);
+    
+    socket.terminate();
+    
+});
+
+
+// create OSC websockets from vanilla websockts, and add to clients list
+wss.on("connection", function (socket, req) {
+
+    const uniqueid = req.headers['sec-websocket-key'];
+    const _url = req.url;
+    const _ip = req.connection.remoteAddress;
+
+    const clientInfo = {
+        url: _url,
+        ip: _ip,
+        uniqueid: uniqueid
+    }
+
+    const disconnectionMsg = {
+        event: {
+            from: clientInfo,
+            key: 'status',
+            val: {
+                connected: 0
+            }
+        }
+    };
+    
+
+//        Max.post("A Web Socket connection has been established! " + req.url + " (" + uniqueid + ") " + req.connection.remoteAddress);
+
+    socket.on("disconnect", () => {
+        console.log(`ciao! ${socket}`);
+    });
+
+    // setup relay back to Max
+    socket.on("message", function (msg) {
+        try {
+
+            const obj = JSON.parse(msg);
+            let key = obj.hasOwnProperty('key') ? obj.key : Object.keys(obj)[0];
+
+            if (key === 'reaper') {
+                console.log(obj.val)
+                udpSend(obj.val, reaper_port);
+            }
+            else if (key === 'pd') {
+                udpSend(obj.val, pd_port);
+            }
+                
+        } catch (e) {
+
+            console.error("json failed to parse " + e);
+        }
+
+    });
+
+    socket.on("close", function () { // event
+        console.log('received socket close', _url, uniqueid);
+        socket.terminate();
+    });
+
+    socket.on("error", function (event) {
+        console.error(event);
+    });
+
+});
+
 
 // start server
 server.listen(http_port, () => {
@@ -35,22 +115,6 @@ server.listen(http_port, () => {
         "/port/ip": 'http://' + getIPAddresses() + ':' + port
     });
 });
-
-function initSocket(socket)
-{
-    socket.on("disconnect", () => {
-        console.log(`ciao! ${socket}`);
-    });
-
-    socket.on('pd', msg => {
-        udpSend(msg, pd_port);
-    })
-
-    socket.on('reaper', msg => {
-        udpSend(msg, reaper_port);
-    })
-
-}
 
 
 let getIPAddresses = function () {
@@ -96,7 +160,8 @@ udp_server.on('error', (err) => {
 
 udp_server.on('message', (msg, rinfo) => {  
     let obj = osc2obj(msg);
-    io.emit("msg", obj);
+    //io.emit("msg", obj);
+    
 });
 
 udp_server.bind(udp_input_port);
